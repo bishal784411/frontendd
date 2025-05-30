@@ -1,10 +1,17 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import { User, Role } from '@/lib/types';
+import { createContext, useContext, useState, useEffect } from "react";
+import { User, Role } from "@/lib/types";
+import { login_api } from "@/api/auth";
+import {
+  getFromLocalStorage,
+  removeFromLocalStorage,
+  setToLocalStorage,
+} from "./utils";
 
 interface AuthContextType {
   user: User | null;
+  accessToken: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -13,79 +20,55 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const mockUsers = [
-  {
-    id: '1',
-    name: 'John Admin',
-    email: 'admin@example.com',
-    role: 'admin' as Role,
-    department: 'Management',
-    position: 'HR Manager',
-    joinDate: '2023-01-01',
-    phone: '',
-    country: '',
-    state: '',
-    city: '',
-    address: '',
-    idType: undefined,
-    frontImage: null,
-    backImage: null,
-  },
-  {
-    id: '2',
-    name: 'Jane Employee',
-    email: 'employee@example.com',
-    role: 'employee' as Role,
-    department: 'Engineering',
-    position: 'Software Engineer',
-    joinDate: '2023-02-01',
-    phone: '',
-    country: '',
-    state: '',
-    city: '',
-    address: '',
-    idType: undefined,
-    frontImage: null,
-    backImage: null,
-  },
-];
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    const checkAuth = async () => {
+      const storedUser = getFromLocalStorage("user");
+      const accessToken = getFromLocalStorage("accessToken");
+      if (storedUser) {
+        setUser(storedUser);
+      }
+      if (accessToken) {
+        console.log("Access Token found:", accessToken);
+      } else {
+        console.log("No access token found");
+      }
+      setIsLoading(false);
+    };
+    checkAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
-    const mockUser = mockUsers.find(u => u.email === email);
-    if (!mockUser) {
-      throw new Error('Invalid credentials');
-    }
-    localStorage.setItem('user', JSON.stringify(mockUser));
-    setUser(mockUser);
+    const { user, accessToken } = await login_api(email, password);
+    console.log("Login successful:", user, accessToken);
+    setToLocalStorage("user", user);
+    setToLocalStorage("accessToken", accessToken);
+    setUser(user);
+    setAccessToken(accessToken);
   };
 
   const logout = () => {
-    localStorage.removeItem('user');
+    removeFromLocalStorage("user");
+    removeFromLocalStorage("accessToken");
     setUser(null);
   };
 
   const updateProfile = (data: Partial<User>) => {
     if (user) {
       const updatedUser = { ...user, ...data };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      localStorage.setItem("user", JSON.stringify(updatedUser));
       setUser(updatedUser);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading, updateProfile }}>
+    <AuthContext.Provider
+      value={{ user, accessToken, login, logout, isLoading, updateProfile }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -94,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

@@ -1,31 +1,43 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { Lock } from 'lucide-react';
-import { refreshAccessToken, signIn } from '@/api/auth';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { toast } from "sonner";
+import { loginValidator } from "@/validator/login.validator";
+import { Lock } from "lucide-react";
 
 export default function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const { login } = useAuth();
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const { error } = loginValidator.validate({ email, password });
+
+    if (error) {
+      // Convert Joi errors to a user-friendly message
+      const messages = error.details.map((d) => d.message).join(", ");
+      toast.error(messages); // or show messages individually
+      return;
+    }
+
     try {
-      // await login(email, password);
-      await signIn(email, password);
-      await refreshAccessToken();
-      toast.success('Login successful');
-      router.push('/dashboard');
+      const login_info = await login(email, password);
+      toast.success("Login successful");
+      router.push("/dashboard");
     } catch (error) {
-      toast.error('Login failed');
+      toast.error("Login failed");
     }
   };
 

@@ -24,7 +24,7 @@ interface ProfileData {
   state: string;
   city: string;
   address: string;
-  idType: "passport" | "citizenship" | "driving-license" | "";
+  idType?: "passport" | "citizenship" | "driving-license";
   frontImage: string | null;
   panCardImage: string | null;
   avatar: string | null;
@@ -48,7 +48,7 @@ export default function ProfilePage() {
     state: user?.state || "",
     city: user?.city || "",
     address: user?.address || "",
-    idType: user?.idType || "",
+    idType: user?.idType,
     frontImage: user?.frontImage || null,
     panCardImage: user?.panCardImage || null,
     avatar: user?.avatar || null,

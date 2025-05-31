@@ -47,11 +47,16 @@ export default function DepartmentsPage() {
     }
   ]);
 
-  const [newDepartment, setNewDepartment] = useState({
+  const [newDepartment, setNewDepartment] = useState<{
+    name: string;
+    description: string;
+    type: 'Web Development' | 'Data Analysis' | 'Public Impact';
+  }>({
     name: '',
     description: '',
-    type: 'Web Development' as const
+    type: 'Web Development'
   });
+
 
   const handleAddDepartment = () => {
     if (!newDepartment.name || !newDepartment.description) {

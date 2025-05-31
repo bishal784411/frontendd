@@ -180,7 +180,7 @@ export default function ReportsPage() {
   };
 
   const filteredReports = weeklyReports.filter(report => {
-    if (user?.role === 'employee' && report.employeeId !== user.id) {
+    if (user?.role?.name === 'employee' && report.employeeId !== user.id) {
       return false;
     }
 
@@ -233,7 +233,7 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {user?.role === 'admin' && (
+      {user?.role?.name === 'admin' && (
         <>
           <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
             <SelectTrigger className="w-[200px]">
@@ -364,10 +364,10 @@ export default function ReportsPage() {
           <FileText className="h-8 w-8 text-primary" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {user?.role === 'admin' ? 'Reports & Analytics' : 'Weekly Reports'}
+              {user?.role?.name === 'admin' ? 'Reports & Analytics' : 'Weekly Reports'}
             </h1>
             <p className="text-muted-foreground mt-2">
-              {user?.role === 'admin' 
+              {user?.role?.name === 'admin' 
                 ? 'View and manage employee reports' 
                 : 'Submit and track your weekly progress reports'}
             </p>
@@ -376,7 +376,7 @@ export default function ReportsPage() {
       </div>
 
       <div className="space-y-6">
-        {user?.role === 'employee' && renderReportForm()}
+        {user?.role?.name === 'employee' && renderReportForm()}
         {renderFilters()}
         {renderReportList()}
       </div>

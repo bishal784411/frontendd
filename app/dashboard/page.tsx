@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+// import { Plus } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useLeaveStore } from '@/lib/leave-store';
@@ -7,7 +9,7 @@ import { useTimeSheetStore } from '@/lib/timesheet-store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Clock, CheckCircle2, AlertCircle, Calendar as CalendarIcon, BarChart2, LineChart } from 'lucide-react';
+import { Clock, CheckCircle2, AlertCircle, Calendar as CalendarIcon, BarChart2, LineChart, Plus } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, addDays, parseISO, differenceInMinutes, isAfter, subMonths } from 'date-fns';
 import { toast } from 'sonner';
 import { Calendar } from '@/components/ui/calendar';
@@ -16,6 +18,7 @@ import { BarChart, Bar, LineChart as RechartsLineChart, Line, XAxis, YAxis, Cart
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TimeEntry } from '@/lib/types';
+
 
 // Import events from calendar page's demo data
 const calendarEvents = [
@@ -118,7 +121,9 @@ export default function Dashboard() {
 
   const getFilteredTimeData = () => {
     const today = new Date();
-    let startDate, endDate;
+    // let startDate, endDate;
+    let startDate: Date , endDate: Date;
+
 
     switch (timeFilter) {
       case 'week':
@@ -131,9 +136,11 @@ export default function Dashboard() {
         break;
     }
 
-    let entries = user?.role === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
+    // let entries = user?.role?.name === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
+    let entries = user?.role?.name === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
 
-    if (user?.role === 'admin' && selectedEmployee !== 'all') {
+
+    if (user?.role?.name === 'admin' && selectedEmployee !== 'all') {
       entries = entries.filter(entry => entry.employeeName === selectedEmployee);
     }
 
@@ -159,7 +166,8 @@ export default function Dashboard() {
   const renderChart = () => {
     const data = getFilteredTimeData();
     const ChartComponent = chartType === 'bar' ? BarChart : RechartsLineChart;
-    const DataComponent = chartType === 'bar' ? Bar : Line;
+    // const DataComponent = chartType === 'bar' ? Bar : Line;
+    const DataComponent = (chartType === 'bar' ? Bar : Line) as React.ElementType;
 
     return (
       <ResponsiveContainer width="100%" height="100%">
@@ -187,7 +195,7 @@ export default function Dashboard() {
 
   // Calculate total hours worked
   const calculateTotalHours = () => {
-    const entries = user?.role === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
+    const entries = user?.role?.name === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
     return entries.reduce((total, entry) => total + entry.duration, 0);
   };
 
@@ -218,7 +226,7 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold">{calculateTotalHours().toFixed(1)}h</p>
                 <p className="text-sm text-muted-foreground">Total Hours Worked</p>
               </div>
-              {currentMonthEntries.length === 0 && user?.role === 'employee' && (
+              {currentMonthEntries.length === 0 && user?.role?.name === 'employee' && (
                 <div className="text-center py-4">
                   <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground mb-4">No time entries for this month</p>
@@ -232,7 +240,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {user?.role === 'employee' && (
+        {user?.role?.name === 'employee' && (
           <Card>
             <CardHeader>
               <CardTitle>Leave Balance</CardTitle>
@@ -322,7 +330,7 @@ export default function Dashboard() {
             Working Hours
           </CardTitle>
           <div className="flex items-center gap-4">
-            {user?.role === 'admin' && (
+            {user?.role?.name === 'admin' && (
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Select employee" />

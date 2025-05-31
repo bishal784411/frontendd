@@ -92,7 +92,7 @@ const generateDemoRecords = (): SalaryRecord[] => {
           providentFund
         },
         netPay,
-        paymentDate: new Date(year, date.getMonth(), 15).toISOString(), // Paid on 15th of each month
+        paymentDate: new Date(parseInt(year), date.getMonth(), 15).toISOString(),
         status: 'paid'
       });
     });

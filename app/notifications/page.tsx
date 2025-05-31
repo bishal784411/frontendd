@@ -23,7 +23,7 @@ export default function NotificationsPage() {
   // Filter notifications based on user role and targetUserId
   const userNotifications = notifications.filter(notification => {
     // For admin, show only notifications without targetUserId (system notifications)
-    if (user?.role === 'admin') {
+    if (user?.role?.name === 'admin') {
       return !notification.targetUserId;
     }
     // For employees, show notifications either targeted to them or without a specific target
@@ -46,12 +46,12 @@ export default function NotificationsPage() {
 
     switch (notification.type) {
       case 'leave_request':
-        return user?.role === 'admin'
+        return user?.role?.name === 'admin'
           ? `${notification.employeeName} submitted a leave request`
           : `Your leave request has been ${notification.message?.includes('approved') ? 'approved' : 'rejected'}`;
       
       case 'weekly_report':
-        return user?.role === 'admin'
+        return user?.role?.name === 'admin'
           ? `${notification.employeeName} submitted a weekly report`
           : 'Your weekly report has been received';
       

@@ -42,14 +42,23 @@ import {
 } from '@/components/ui/popover';
 import { format } from 'date-fns';
 
+
+
+// interface Role {
+//   id: number;
+//   name: string;
+// }
+
+
+
 interface NavigationProps {
   children: React.ReactNode;
 }
 
-export interface Role {
-  id: number;
-  name: string;
-}
+// export interface Role {
+//   id: number;
+//   name: string;
+// }
 
 
 export default function Navigation({ children }: NavigationProps) {
@@ -83,6 +92,18 @@ export default function Navigation({ children }: NavigationProps) {
   };
 
   const roleName = user?.role?.name?.toLowerCase() || "";
+  // const roleName = user?.role?.toLowerCase() || "";
+
+  // const roleName = (() => {
+  //   if (typeof user?.role === "string") {
+  //     return user.role.toLowerCase();
+  //   } else if (typeof user?.role === "object" && "name" in user.role) {
+  //     return String(user.role).toLowerCase();
+  //   }
+  //   return "";
+  // })();
+
+
   const adminLinks = [
     {
       href: '/dashboard',
@@ -109,21 +130,21 @@ export default function Navigation({ children }: NavigationProps) {
       label: 'Leave Management',
       icon: Calendar,
     },
-    {
-      href: '/calendar',
-      label: 'Calendar',
-      icon: CalendarDays,
-    },
+    // {
+    //   href: '/calendar',
+    //   label: 'Calendar',
+    //   icon: CalendarDays,
+    // },
     {
       href: '/reports',
       label: 'Reports',
       icon: FileText,
     },
-    {
-      href: '/tickets',
-      label: 'Tickets',
-      icon: Ticket,
-    },
+    // {
+    //   href: '/tickets',
+    //   label: 'Tickets',
+    //   icon: Ticket,
+    // },
   ];
 
   const employeeLinks = [
@@ -147,21 +168,21 @@ export default function Navigation({ children }: NavigationProps) {
       label: 'Leave',
       icon: Calendar,
     },
-    {
-      href: '/calendar',
-      label: 'Calendar',
-      icon: CalendarDays,
-    },
+    // {
+    //   href: '/calendar',
+    //   label: 'Calendar',
+    //   icon: CalendarDays,
+    // },
     {
       href: '/reports',
       label: 'Weekly Reports',
       icon: FileText,
     },
-    {
-      href: '/tickets',
-      label: 'Support',
-      icon: Ticket,
-    },
+    // {
+    //   href: '/tickets',
+    //   label: 'Support',
+    //   icon: Ticket,
+    // },
   ];
 
   // const links = user?.role === 'admin' ? adminLinks : employeeLinks;
@@ -177,7 +198,9 @@ export default function Navigation({ children }: NavigationProps) {
           "transition-all duration-500",
           isCollapsed ? "h-12 w-12" : "h-20 w-20"
         )}>
-          <AvatarImage src={user?.avatar} alt={user?.name} />
+          {/* <AvatarImage src={user?.avatar} alt={user?.name} /> */}
+          <AvatarImage src={user?.avatar ?? undefined} alt={user?.name ?? undefined} />
+
           <AvatarFallback className={cn(
             "transition-all duration-500",
             isCollapsed ? "text-base" : "text-2xl"
@@ -336,7 +359,9 @@ export default function Navigation({ children }: NavigationProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.avatar} alt={user?.name} />
+                    {/* <AvatarImage src={user?.avatar} alt={user?.name} /> */}
+                    <AvatarImage src={user?.avatar ?? undefined} alt={user?.name ?? undefined} />
+
                     <AvatarFallback>
                       {user?.name?.charAt(0).toUpperCase()}
                     </AvatarFallback>

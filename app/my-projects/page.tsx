@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useAuth } from '@/lib/auth-context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
+// import { Progress } from "@/components/ui/progress";
 import { Briefcase, Clock, Users, CheckCircle2, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import {
@@ -103,13 +103,13 @@ export default function MyProjectsPage() {
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
               <div className="space-y-4 flex-1">
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Progress</span>
                     <span className="font-medium">{project.progress}%</span>
                   </div>
                   <Progress value={project.progress} className="h-2" />
-                </div>
+                </div> */}
 
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>

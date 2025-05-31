@@ -25,7 +25,7 @@ interface Project {
   endDate: string;
   status: 'active' | 'completed' | 'on-hold';
   assignedEmployees: string[];
-  progress: number;
+  // progress: number;
 }
 
 export default function ProjectsPage() {
@@ -102,7 +102,7 @@ export default function ProjectsPage() {
         ...newProject,
         budget: parseFloat(newProject.budget),
         status: "active",
-        progress: 0,
+        // progress: 0,
       };
 
       setProjects([...projects, project]);
@@ -330,7 +330,7 @@ export default function ProjectsPage() {
                         <span className="text-muted-foreground">Department</span>
                         <span className="font-medium">{project.department}</span>
                       </div>
-                      <div className="mt-2">
+                      {/* <div className="mt-2">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-muted-foreground">Progress</span>
                           <span>{project.progress}%</span>
@@ -341,7 +341,7 @@ export default function ProjectsPage() {
                             style={{ width: `${project.progress}%` }}
                           />
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </CardContent>

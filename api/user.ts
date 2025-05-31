@@ -3,7 +3,7 @@ import axiosInstance from "./axios";
 export const getMyInfo = async () => {
   try {
     const response = await axiosInstance.get("/user/me");
-    return response.data; // should be the full user object with role
+    return response.data; 
   } catch (error) {
     console.error("Failed to fetch my info", error);
     return null;
@@ -15,7 +15,7 @@ interface CreateUserParams {
   email: string;
   password: string;
   phone: string;
-  roleId: number;         // e.g., 1 for admin, 2 for employee
+  roleId: number;         
   fullTimer: boolean;
   address: string;
   document?: string;
@@ -35,11 +35,9 @@ export const createUserApi = async (data: CreateUserParams) => {
   }
 };
 
-
-
 export const getAllUsers = async () => {
   const response = await axiosInstance.get('/user/admin/all', {
-    withCredentials: true, // include if using cookies for auth
+    withCredentials: true, // 
   });
   return response.data;
 };

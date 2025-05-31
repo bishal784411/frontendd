@@ -34,3 +34,12 @@ export const createUserApi = async (data: CreateUserParams) => {
     throw new Error(error?.response?.data?.message || 'Failed to create user');
   }
 };
+
+
+
+export const getAllUsers = async () => {
+  const response = await axiosInstance.get('/user/admin/all', {
+    withCredentials: true, // include if using cookies for auth
+  });
+  return response.data;
+};

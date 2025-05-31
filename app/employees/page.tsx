@@ -112,30 +112,6 @@ export default function EmployeesPage() {
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // const handleAddEmployee = () => {
-  //   if (!newEmployee.name || !newEmployee.email || !newEmployee.password || 
-  //       !newEmployee.department || !newEmployee.position || !newEmployee.joinDate) {
-  //     toast.error('Please fill in all required fields');
-  //     return;
-  //   }
-
-  //   const employee = {
-  //     id: Date.now().toString(),
-  //     ...newEmployee,
-  //     status: 'active',
-  //     avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=256&h=256&fit=crop&crop=faces',
-  //     documents: {
-  //       panCard: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop',
-  //       idType: 'passport',
-  //       idDocument: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop'
-  //     }
-  //   };
-
-  //   setEmployees([...employees, employee]);
-  //   toast.success('Employee added successfully');
-  //   setNewEmployee(emptyEmployeeForm);
-  //   setShowEmployeeForm(false);
-  // };
 
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.email || !newEmployee.password || !newEmployee.phone) {
@@ -398,10 +374,13 @@ export default function EmployeesPage() {
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div className="space-y-6">
                                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                                    <Avatar className="h-20 w-20">
+                                  <Avatar className="h-20 w-20">
+                                    {employee.avatar && (
                                       <AvatarImage src={employee.avatar} alt={employee.name} />
-                                      <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
-                                    </Avatar>
+                                    )}
+                                    <AvatarFallback>{employee.name.substring(0, 2)}</AvatarFallback>
+                                  </Avatar>
+
                                     <div>
                                       <h3 className="text-xl font-semibold">{employee.name}</h3>
                                       <p className="text-gray-500">{employee.position}</p>

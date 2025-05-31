@@ -1,5 +1,6 @@
 "use client";
 
+import { createProject } from "@/api/project";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,31 +47,78 @@ export default function ProjectsPage() {
     { id: '3', name: 'Mike Johnson', department: 'Public Impact' },
   ];
 
-  const handleAddProject = () => {
-    if (!newProject.name || !newProject.clientName || !newProject.budget || !newProject.startDate || !newProject.endDate) {
-      toast.error('Please fill in all required fields');
+  // const handleAddProject = () => {
+  //   if (!newProject.name || !newProject.clientName || !newProject.budget || !newProject.startDate || !newProject.endDate) {
+  //     toast.error('Please fill in all required fields');
+  //     return;
+  //   }
+
+  //   const project: Project = {
+  //     id: Date.now().toString(),
+  //     ...newProject,
+  //     budget: parseFloat(newProject.budget),
+  //     status: 'active',
+  //     progress: 0,
+  //   };
+
+  //   setProjects([...projects, project]);
+  //   setNewProject({
+  //     name: '',
+  //     clientName: '',
+  //     budget: '',
+  //     department: 'Web Development',
+  //     startDate: '',
+  //     endDate: '',
+  //     assignedEmployees: [],
+  //   });
+  //   toast.success('Project added successfully');
+  // };
+
+  const handleAddProject = async () => {
+    if (
+      !newProject.name ||
+      !newProject.clientName ||
+      !newProject.budget ||
+      !newProject.endDate
+    ) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
-    const project: Project = {
-      id: Date.now().toString(),
-      ...newProject,
-      budget: parseFloat(newProject.budget),
-      status: 'active',
-      progress: 0,
-    };
+    try {
+      // Send only the backend-required fields
+      const response = await createProject({
+        name: newProject.name,
+        client: newProject.clientName,
+        budget: newProject.budget,
+        deadline: newProject.endDate,
+      });
 
-    setProjects([...projects, project]);
-    setNewProject({
-      name: '',
-      clientName: '',
-      budget: '',
-      department: 'Web Development',
-      startDate: '',
-      endDate: '',
-      assignedEmployees: [],
-    });
-    toast.success('Project added successfully');
+      console.log("Project added successfully:", response);
+
+      // Still store all data on frontend
+      const project: Project = {
+        id: Date.now().toString(),
+        ...newProject,
+        budget: parseFloat(newProject.budget),
+        status: "active",
+        progress: 0,
+      };
+
+      setProjects([...projects, project]);
+      setNewProject({
+        name: "",
+        clientName: "",
+        budget: "",
+        department: "Web Development",
+        startDate: "",
+        endDate: "",
+        assignedEmployees: [],
+      });
+      toast.success("Project added successfully");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to create project");
+    }
   };
 
   const getStatusColor = (status: string) => {

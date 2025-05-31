@@ -8,14 +8,24 @@ export function cn(...inputs: ClassValue[]) {
 // utils/localStorage.js
 
 // Save data to localStorage
-export const setToLocalStorage = (key: string, value: string) => {
+// export const setToLocalStorage = (key: string, value: string) => {
+//   try {
+//     const serializedValue = JSON.stringify(value);
+//     localStorage.setItem(key, serializedValue);
+//   } catch (err) {
+//     console.error("Error setting localStorage", err);
+//   }
+// };
+export const setToLocalStorage = (key: string, value: any) => {
   try {
-    const serializedValue = JSON.stringify(value);
+    const serializedValue =
+      typeof value === "string" ? value : JSON.stringify(value);
     localStorage.setItem(key, serializedValue);
   } catch (err) {
     console.error("Error setting localStorage", err);
   }
 };
+
 
 // Get data from localStorage
 export const getFromLocalStorage = (key: string) => {

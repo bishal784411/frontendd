@@ -80,6 +80,32 @@ const sampleEmployees = [
       panId: 'ABCDE1234F',
       bankAddress: '123 Banking Street, Finance District'
     }
+  },
+  {
+    id: '2',
+    name: 'Sarah Johnson',
+    email: 'sarah.j@company.com',
+    phone: '+1 (555) 234-5678',
+    department: 'UI/UX Design',
+    position: 'Lead Designer',
+    joinDate: '2023-03-20',
+    status: 'active',
+    employmentType: 'full-time',
+    role: 'employee',
+    address: '456 Design Avenue, Floor 3, Brooklyn, New York',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=256&h=256&fit=crop&crop=faces',
+    documents: {
+      panCard: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop',
+      idType: 'passport',
+      idDocument: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop'
+    },
+    bankDetails: {
+      accountHolder: 'Sarah Johnson',
+      accountNumber: '**** **** 5678',
+      bankName: 'City Bank',
+      panId: 'FGHIJ5678K',
+      bankAddress: '456 Financial Avenue, Banking Zone'
+    }
   }
 ];
 
@@ -91,8 +117,8 @@ const emptyEmployeeForm = {
   department: 'Web Development',
   position: '',
   joinDate: format(new Date(), 'yyyy-MM-dd'),
-  employmentType: 'full-time' as 'full-time' | 'part-time',
-  role: 'employee' as 'employee' | 'admin',
+  employmentType: 'full-time' as const,
+  role: 'employee' as const,
   address: '',
   bankDetails: {
     accountHolder: '',
@@ -108,67 +134,34 @@ export default function EmployeesPage() {
   const [selectedDepartment, setSelectedDepartment] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
-  const [newEmployee, setNewEmployee] = useState<typeof emptyEmployeeForm>(emptyEmployeeForm);
+  const [newEmployee, setNewEmployee] = useState(emptyEmployeeForm);
   const [showEmployeeForm, setShowEmployeeForm] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // const handleAddEmployee = () => {
-  //   if (!newEmployee.name || !newEmployee.email || !newEmployee.password || 
-  //       !newEmployee.department || !newEmployee.position || !newEmployee.joinDate) {
-  //     toast.error('Please fill in all required fields');
-  //     return;
-  //   }
-
-  //   const employee = {
-  //     id: Date.now().toString(),
-  //     ...newEmployee,
-  //     status: 'active',
-  //     avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=256&h=256&fit=crop&crop=faces',
-  //     documents: {
-  //       panCard: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop',
-  //       idType: 'passport',
-  //       idDocument: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop'
-  //     }
-  //   };
-
-  //   setEmployees([...employees, employee]);
-  //   toast.success('Employee added successfully');
-  //   setNewEmployee(emptyEmployeeForm);
-  //   setShowEmployeeForm(false);
-  // };
-
-  const handleAddEmployee = async () => {
-    if (!newEmployee.name || !newEmployee.email || !newEmployee.password || !newEmployee.phone) {
+  const handleAddEmployee = () => {
+    if (!newEmployee.name || !newEmployee.email || !newEmployee.password || 
+        !newEmployee.department || !newEmployee.position || !newEmployee.joinDate) {
       toast.error('Please fill in all required fields');
       return;
     }
-  
-    // Build payload only with fields you want to send now
-    const payload = {
-      name: newEmployee.name,
-      email: newEmployee.email,
-      password: newEmployee.password,
-      phone: newEmployee.phone,
-      roleId: newEmployee.role === 'admin' ? 1 : 2,
-      fullTimer: newEmployee.employmentType === 'full-time',
-      address: newEmployee.address,
-      document: 'test docs',
-      salary: 250,
+
+    const employee = {
+      id: Date.now().toString(),
+      ...newEmployee,
+      status: 'active',
+      avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=256&h=256&fit=crop&crop=faces',
+      documents: {
+        panCard: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop',
+        idType: 'passport',
+        idDocument: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2064&auto=format&fit=crop'
+      }
     };
-  
-    console.log('Payload:', payload);
-  
-    try {
-      await createUserApi(payload);
-      toast.success('User created successfully');
-      setShowEmployeeForm(false);
-      setNewEmployee(emptyEmployeeForm);
-    } catch (err) {
-      toast.error((err as Error).message);
-    }
+
+    setEmployees([...employees, employee]);
+    toast.success('Employee added successfully');
+    setNewEmployee(emptyEmployeeForm);
+    setShowEmployeeForm(false);
   };
-  
-  
 
   const handleDeleteEmployee = (id: string) => {
     setEmployees(employees.filter(emp => emp.id !== id));

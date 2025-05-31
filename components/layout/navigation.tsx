@@ -46,6 +46,12 @@ interface NavigationProps {
   children: React.ReactNode;
 }
 
+export interface Role {
+  id: number;
+  name: string;
+}
+
+
 export default function Navigation({ children }: NavigationProps) {
   const { user, logout } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotificationStore();
@@ -76,6 +82,7 @@ export default function Navigation({ children }: NavigationProps) {
     router.push('/');
   };
 
+  const roleName = user?.role?.name?.toLowerCase() || "";
   const adminLinks = [
     {
       href: '/dashboard',
@@ -157,7 +164,8 @@ export default function Navigation({ children }: NavigationProps) {
     },
   ];
 
-  const links = user?.role === 'admin' ? adminLinks : employeeLinks;
+  // const links = user?.role === 'admin' ? adminLinks : employeeLinks;
+  const links = roleName === "admin" ? adminLinks : employeeLinks;
 
   const NavLinks = () => (
     <>

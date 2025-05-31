@@ -8,6 +8,7 @@ import {
   removeFromLocalStorage,
   setToLocalStorage,
 } from "./utils";
+import { getMyInfo } from "@/api/user";
 
 interface AuthContextType {
   user: User | null;
@@ -42,14 +43,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
+  // const login = async (email: string, password: string) => {
+  //   const { user, accessToken } = await login_api(email, password);
+  //   console.log("Login successful:", user, accessToken);
+  //   // setToLocalStorage("user", user);
+  //   // setToLocalStorage("accessToken", accessToken);
+  //   setToLocalStorage("user", user); // object, keep stringifying
+  //   localStorage.setItem("accessToken", accessToken); // store string as is
+
+  //   setUser(user);
+  //   setAccessToken(accessToken);
+
+  //   const fetchedUser = await getMyInfo();
+  //   setUser(fetchedUser);
+  //   setToLocalStorage("user", fetchedUser);
+  // };
+
   const login = async (email: string, password: string) => {
     const { user, accessToken } = await login_api(email, password);
     console.log("Login successful:", user, accessToken);
     setToLocalStorage("user", user);
-    setToLocalStorage("accessToken", accessToken);
+    localStorage.setItem("accessToken", accessToken);
     setUser(user);
     setAccessToken(accessToken);
   };
+
+
 
   const logout = () => {
     removeFromLocalStorage("user");

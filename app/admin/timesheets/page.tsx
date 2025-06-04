@@ -1,114 +1,141 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
+import { useAuth } from '@/lib/auth-context';
+import { useTimeSheetStore } from '@/lib/timesheet-store';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Clock, Search, Check, X, ChevronDown, ChevronRight, Filter } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format, startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
+import { Clock, Eye, Users, Download, Search, ChevronRight, ChevronDown } from "lucide-react";
+import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
-import { useTimeSheetStore } from '@/lib/timesheet-store';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { TimeEntry } from '@/lib/types';
 
+// Single sample entry
+const sampleTimeEntry: TimeEntry = {
+  id: '1',
+  userId: '2',
+  employeeName: 'Jane Employee',
+  projectName: 'Website Redesign',
+  startTime: '2024-03-20T09:00:00.000Z',
+  endTime: '2024-03-20T17:00:00.000Z',
+  description: 'Implemented new dashboard features and optimized database queries',
+  duration: 8,
+  verified: false
+};
+
 export default function AdminTimesheetsPage() {
-  const { getAllEntries } = useTimeSheetStore();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState('');
-  const [customDateRange, setCustomDateRange] = useState({
-    start: '',
-    end: ''
-  });
-  const [filterType, setFilterType] = useState<'current' | 'custom'>('current');
-  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
+  const [selectedEmployee, setSelectedEmployee] = useState('all');
+  const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState('all');
   const [collapsedEmployees, setCollapsedEmployees] = useState<string[]>([]);
+  const [selectedEntriesByEmployee, setSelectedEntriesByEmployee] = useState<Record<string, string[]>>({});
+  const [selectedEntry, setSelectedEntry] = useState<TimeEntry | null>(null);
+
+  const departments = ['Web Development', 'Data Analysis', 'Public Impact'];
+  const employees = [
+    { id: '1', name: 'John Admin', department: 'Web Development' },
+    { id: '2', name: 'Jane Employee', department: 'Data Analysis' },
+    { id: '3', name: 'Mike Johnson', department: 'Public Impact' }
+  ];
 
   const toggleEmployee = (employeeId: string) => {
-    setCollapsedEmployees(prev => 
+    setCollapsedEmployees(prev =>
       prev.includes(employeeId)
         ? prev.filter(id => id !== employeeId)
         : [...prev, employeeId]
     );
   };
 
-  const handleApproveEntry = (entry: TimeEntry) => {
-    toast.success('Time entry approved');
-    setSelectedEntry(null);
+  const handleVerifyEntries = (employeeName: string) => {
+    const selectedEntries = selectedEntriesByEmployee[employeeName] || [];
+    if (selectedEntries.length === 0) return;
+
+    toast.success(`${selectedEntries.length} entries verified for ${employeeName}`);
+    setSelectedEntriesByEmployee(prev => ({
+      ...prev,
+      [employeeName]: []
+    }));
   };
 
-  const handleRejectEntry = (entry: TimeEntry) => {
-    toast.error('Time entry rejected');
-    setSelectedEntry(null);
+  const handleMarkPending = (employeeName: string) => {
+    const selectedEntries = selectedEntriesByEmployee[employeeName] || [];
+    if (selectedEntries.length === 0) return;
+
+    toast.success(`${selectedEntries.length} entries marked as pending for ${employeeName}`);
+    setSelectedEntriesByEmployee(prev => ({
+      ...prev,
+      [employeeName]: []
+    }));
   };
 
-  const allEntries = getAllEntries();
-
-  // Filter entries based on date range
-  const filterEntriesByDate = (entries: TimeEntry[]) => {
-    return entries.filter(entry => {
-      const entryDate = new Date(entry.startTime);
-      
-      if (filterType === 'current') {
-        const currentMonth = startOfMonth(new Date());
-        const currentMonthEnd = endOfMonth(new Date());
-        return isWithinInterval(entryDate, { start: currentMonth, end: currentMonthEnd });
-      }
-      
-      if (filterType === 'custom' && customDateRange.start && customDateRange.end) {
-        const start = new Date(customDateRange.start);
-        const end = new Date(customDateRange.end);
-        return isWithinInterval(entryDate, { start, end });
-      }
-      
-      return true;
-    });
+  const handleSelectAllForEmployee = (employeeName: string, entries: TimeEntry[], checked: boolean) => {
+    setSelectedEntriesByEmployee(prev => ({
+      ...prev,
+      [employeeName]: checked ? entries.map(e => e.id) : []
+    }));
   };
 
-  // Group entries by employee
-  const groupedByEmployee = allEntries.reduce((acc, entry) => {
-    if (!acc[entry.employeeName]) {
-      acc[entry.employeeName] = [];
-    }
-    acc[entry.employeeName].push(entry);
-    return acc;
-  }, {} as Record<string, TimeEntry[]>);
+  const exportToCSV = (employeeName: string, entries: TimeEntry[]) => {
+    const headers = ['Date', 'Project', 'Description', 'Start Time', 'End Time', 'Duration', 'Status'];
+    const csvData = entries.map(entry => [
+      format(parseISO(entry.startTime), 'yyyy-MM-dd'),
+      entry.projectName,
+      entry.description,
+      format(parseISO(entry.startTime), 'HH:mm'),
+      format(parseISO(entry.endTime), 'HH:mm'),
+      `${entry.duration}h`,
+      entry.verified ? 'Verified' : 'Pending'
+    ]);
 
-  // Filter entries based on search and date filters
-  const filteredEmployees = Object.entries(groupedByEmployee)
-    .filter(([employeeName]) => 
-      !selectedEmployee || employeeName === selectedEmployee
-    )
-    .filter(([employeeName]) =>
-      employeeName.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${employeeName.replace(/\s+/g, '_')}_timesheet.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    toast.success(`Timesheet exported for ${employeeName}`);
+  };
+
+  // Filter employees based on department
+  const filteredEmployees = employees.filter(emp =>
+    selectedDepartment === 'all' || emp.department === selectedDepartment
+  );
+
+  // Group the sample entry by employee
+  const groupedByEmployee = {
+    [sampleTimeEntry.employeeName]: [sampleTimeEntry]
+  };
+
+  const filteredEmployeeData = Object.entries(groupedByEmployee)
+    .filter(([employeeName, entries]) => {
+      const employee = employees.find(emp => emp.name === employeeName);
+      const matchesDepartment = selectedDepartment === 'all' || (employee && employee.department === selectedDepartment);
+      const matchesEmployee = selectedEmployee === 'all' || employeeName === selectedEmployee;
+      const matchesSearch = employeeName.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = selectedStatus === 'all' ||
+        (selectedStatus === 'verified' && entries.every(e => e.verified)) ||
+        (selectedStatus === 'pending' && entries.some(e => !e.verified));
+
+      return matchesDepartment && matchesEmployee && matchesSearch && matchesStatus;
+    })
     .map(([employeeName, entries]) => ({
       employeeName,
-      entries: filterEntriesByDate(entries).sort((a, b) => 
-        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-      )
+      entries
     }));
-
-  // Calculate total hours for each employee
-  const calculateTotalHours = (entries: TimeEntry[]) => {
-    return entries.reduce((total, entry) => total + entry.duration, 0);
-  };
 
   return (
     <div className="container mx-auto py-8">
@@ -120,7 +147,7 @@ export default function AdminTimesheetsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-4 flex-1">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -131,118 +158,171 @@ export default function AdminTimesheetsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {departments.map(dept => (
+                <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {/* <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select employee" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="John Admin">John Admin</SelectItem>
-              <SelectItem value="Jane Employee">Jane Employee</SelectItem>
+              <SelectItem value="all">All Employees</SelectItem>
+              {filteredEmployees.map(emp => (
+                <SelectItem key={emp.id} value={emp.name}>{emp.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select> */}
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="verified">Verified</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
             </SelectContent>
           </Select>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Date Filter
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Filter Type</label>
-                  <Select value={filterType} onValueChange={(value: 'current' | 'custom') => setFilterType(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select filter type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="current">Current Month</SelectItem>
-                      <SelectItem value="custom">Custom Range</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {filterType === 'custom' && (
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Date Range</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        type="date"
-                        value={customDateRange.start}
-                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                      />
-                      <Input
-                        type="date"
-                        value={customDateRange.end}
-                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
 
-      <div className="space-y-6">
-        {filteredEmployees.map(({ employeeName, entries }) => {
+      <div className="space-y-6 mt-6">
+        {filteredEmployeeData.map(({ employeeName, entries }) => {
           const isCollapsed = collapsedEmployees.includes(employeeName);
-          const totalHours = calculateTotalHours(entries);
+          const selectedEntries = selectedEntriesByEmployee[employeeName] || [];
+          const allEntriesSelected = entries.length > 0 && entries.every(entry => selectedEntries.includes(entry.id));
+          const someEntriesSelected = entries.some(entry => selectedEntries.includes(entry.id));
 
           return (
             <Card key={employeeName}>
-              <CardHeader 
+              <CardHeader
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => toggleEmployee(employeeName)}
               >
-                <div className="flex items-center justify-between">
+                <div className="flex justify-between items-center">
                   <div>
                     <CardTitle>{employeeName}</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Total hours: {totalHours.toFixed(1)}h
+                      Total hours: {entries.reduce((sum, entry) => sum + entry.duration, 0).toFixed(1)}h
                     </p>
                   </div>
-                  {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4" />
-                  )}
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        exportToCSV(employeeName, entries);
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export CSV
+                    </Button>
+                    {selectedEntries.length > 0 && (
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleVerifyEntries(employeeName);
+                          }}
+                        >
+                          Verify Selected ({selectedEntries.length})
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleMarkPending(employeeName);
+                          }}
+                        >
+                          Mark as Pending
+                        </Button>
+                      </>
+                    )}
+                    {isCollapsed ? (
+                      <ChevronRight className="h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4" />
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               {!isCollapsed && (
                 <CardContent>
                   <div className="rounded-md border">
-                    <div className="grid grid-cols-6 gap-4 p-4 font-medium border-b">
+                    <div className="grid grid-cols-8 gap-4 p-4 font-medium border-b">
                       <div>Date</div>
                       <div>Project</div>
                       <div className="col-span-2">Description</div>
                       <div>Duration</div>
+                      <div>Status</div>
                       <div>Actions</div>
+                      <div className="flex items-center justify-center">
+                        <Checkbox
+                          checked={allEntriesSelected}
+                          indeterminate={!allEntriesSelected && someEntriesSelected}
+                          onCheckedChange={(checked) => {
+                            handleSelectAllForEmployee(employeeName, entries, checked as boolean);
+                          }}
+                        />
+                      </div>
                     </div>
                     <div className="divide-y">
                       {entries.map((entry) => (
-                        <div key={entry.id} className="grid grid-cols-6 gap-4 p-4">
+                        <div key={entry.id} className="grid grid-cols-8 gap-4 p-4">
                           <div>{format(parseISO(entry.startTime), 'MMM d, yyyy')}</div>
                           <div>{entry.projectName}</div>
-                          <div className="col-span-2">{entry.description}</div>
+                          <div className="col-span-2">
+                            <div className="flex items-center gap-2">
+                              {entry.description}
+                            </div>
+                          </div>
                           <div>{entry.duration.toFixed(2)}h</div>
                           <div>
+                            {entry.verified ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Pending
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex justify-center">
                             <Button
                               variant="ghost"
-                              size="sm"
+                              size="icon"
                               onClick={() => setSelectedEntry(entry)}
                             >
-                              View Details
+                              <Eye className="h-4 w-4" />
                             </Button>
+                          </div>
+                          <div className="flex justify-center">
+                            <Checkbox
+                              checked={selectedEntries.includes(entry.id)}
+                              onCheckedChange={(checked) => {
+                                setSelectedEntriesByEmployee(prev => ({
+                                  ...prev,
+                                  [employeeName]: checked
+                                    ? [...(prev[employeeName] || []), entry.id]
+                                    : (prev[employeeName] || []).filter(id => id !== entry.id)
+                                }));
+                              }}
+                            />
                           </div>
                         </div>
                       ))}
-                      {entries.length === 0 && (
-                        <div className="p-4 text-center text-muted-foreground">
-                          No timesheet entries found for this period
-                        </div>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -261,50 +341,33 @@ export default function AdminTimesheetsPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-sm text-muted-foreground">Employee</p>
-                  <p className="font-medium">{selectedEntry.employeeName}</p>
+                  <p className="text-sm text-muted-foreground">Date</p>
+                  <p className="font-medium">{format(new Date(selectedEntry.startTime), 'PPP')}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Project</p>
                   <p className="font-medium">{selectedEntry.projectName}</p>
                 </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Start Time</p>
+                  <p className="font-medium">{format(new Date(selectedEntry.startTime), 'p')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">End Time</p>
+                  <p className="font-medium">{format(new Date(selectedEntry.endTime), 'p')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Duration</p>
+                  <p className="font-medium">{selectedEntry.duration.toFixed(2)}h</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Status</p>
+                  <p className="font-medium">{selectedEntry.verified ? 'Verified' : 'Pending'}</p>
+                </div>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Description</p>
                 <p className="font-medium">{selectedEntry.description}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">Start Time</p>
-                  <p className="font-medium">
-                    {format(parseISO(selectedEntry.startTime), 'MMM d, yyyy HH:mm')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">End Time</p>
-                  <p className="font-medium">
-                    {format(parseISO(selectedEntry.endTime), 'MMM d, yyyy HH:mm')}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Duration</p>
-                <p className="font-medium">{selectedEntry.duration.toFixed(2)} hours</p>
-              </div>
-              <div className="flex justify-end gap-4 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => handleRejectEntry(selectedEntry)}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  Reject
-                </Button>
-                <Button
-                  onClick={() => handleApproveEntry(selectedEntry)}
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Approve
-                </Button>
               </div>
             </div>
           )}

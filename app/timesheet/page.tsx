@@ -1,15 +1,36 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarDays, Clock, Plus, Download, ChevronDown, ChevronRight } from "lucide-react";
-import { format, differenceInMinutes, parseISO, isWithinInterval, startOfMonth, endOfMonth, addDays, subMonths } from 'date-fns';
+import { CalendarDays, Clock, Plus, Download, ChevronDown, ChevronRight, BadgeCheck, Clock4 } from "lucide-react";
+import { format, differenceInMinutes, parseISO, isWithinInterval, startOfMonth, endOfMonth, addDays, subMonths, isSameDay } from 'date-fns';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/auth-context';
 import { useTimeSheetStore } from '@/lib/timesheet-store';
 import { TimeEntry } from '@/lib/types';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// Available projects for the dropdown
+const projects = [
+  'Website Redesign',
+  'Mobile App Development',
+  'Database Migration',
+  'API Integration',
+  'UI/UX Improvements',
+  'Performance Optimization',
+  'Security Updates',
+  'Documentation',
+  'Testing & QA',
+  'Client Support'
+];
 
 export default function TimesheetPage() {
   const { user } = useAuth();
@@ -23,10 +44,15 @@ export default function TimesheetPage() {
     projectName: '',
   });
   const [collapsedMonths, setCollapsedMonths] = useState<string[]>([]);
+  const [filterType, setFilterType] = useState<'current' | 'previous' | 'custom'>('current');
+  const [customDateRange, setCustomDateRange] = useState({
+    start: '',
+    end: ''
+  });
 
   const toggleMonth = (month: string) => {
-    setCollapsedMonths(prev => 
-      prev.includes(month) 
+    setCollapsedMonths(prev =>
+      prev.includes(month)
         ? prev.filter(m => m !== month)
         : [...prev, month]
     );
@@ -34,24 +60,34 @@ export default function TimesheetPage() {
 
   const handleManualEntry = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    if (!newEntry.projectName) {
+      toast.error('Please select a project');
+      return;
+    }
+
     const baseDate = new Date(newEntry.date);
     const [startHours, startMinutes] = newEntry.startTime.split(':');
     const [endHours, endMinutes] = newEntry.endTime.split(':');
-    
+
     let startTime = new Date(baseDate);
     startTime.setHours(parseInt(startHours), parseInt(startMinutes), 0, 0);
-    
+
     let endTime = new Date(baseDate);
     endTime.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
 
-    // Handle overnight entries
     if (endTime <= startTime) {
-      endTime = addDays(endTime, 1);
+      toast.error('Time entries must be within the same day (00:00 - 23:59)');
+      return;
+    }
+
+    if (!isSameDay(startTime, endTime)) {
+      toast.error('Time entries must be within the same day (00:00 - 23:59)');
+      return;
     }
 
     const duration = differenceInMinutes(endTime, startTime) / 60;
-    
+
     if (duration <= 0) {
       toast.error('End time must be after start time');
       return;
@@ -61,7 +97,7 @@ export default function TimesheetPage() {
       toast.error('Time entry cannot exceed 24 hours');
       return;
     }
-    
+
     const entry: TimeEntry = {
       id: Date.now().toString(),
       userId: user?.id || '',
@@ -70,7 +106,8 @@ export default function TimesheetPage() {
       endTime: endTime.toISOString(),
       description: newEntry.description,
       projectName: newEntry.projectName,
-      duration
+      duration,
+      verified: false // New entries are always unverified
     };
 
     addTimeEntry(entry);
@@ -87,14 +124,15 @@ export default function TimesheetPage() {
 
   const exportToCSV = () => {
     const entries = getEntriesForUser(user?.id || '');
-    const headers = ['Date', 'Project', 'Description', 'Start Time', 'End Time', 'Duration'];
+    const headers = ['Date', 'Project', 'Description', 'Start Time', 'End Time', 'Duration', 'Status'];
     const csvData = entries.map(entry => [
       format(new Date(entry.startTime), 'yyyy-MM-dd'),
       entry.projectName,
       entry.description,
       format(new Date(entry.startTime), 'HH:mm'),
       format(new Date(entry.endTime), 'HH:mm'),
-      `${entry.duration.toFixed(2)}h`
+      `${entry.duration.toFixed(2)}h`,
+      entry.verified ? 'Verified' : 'Pending'
     ]);
 
     const csvContent = [
@@ -114,45 +152,60 @@ export default function TimesheetPage() {
   };
 
   const timeEntries = getEntriesForUser(user?.id || '');
-  const currentMonth = startOfMonth(new Date());
-  const currentMonthEnd = endOfMonth(new Date());
-  
-  const currentMonthEntries = timeEntries.filter(entry => {
-    const entryDate = new Date(entry.startTime);
-    return isWithinInterval(entryDate, { start: currentMonth, end: currentMonthEnd });
-  });
 
-  const groupedByMonth = timeEntries.reduce((acc, entry) => {
+  const filterEntriesByDate = (entries: TimeEntry[]) => {
+    return entries.filter(entry => {
+      const entryDate = new Date(entry.startTime);
+
+      switch (filterType) {
+        case 'current':
+          const currentMonth = startOfMonth(new Date());
+          const currentMonthEnd = endOfMonth(new Date());
+          return isWithinInterval(entryDate, { start: currentMonth, end: currentMonthEnd });
+
+        case 'previous':
+          const previousMonth = startOfMonth(subMonths(new Date(), 1));
+          const previousMonthEnd = endOfMonth(subMonths(new Date(), 1));
+          return isWithinInterval(entryDate, { start: previousMonth, end: previousMonthEnd });
+
+        case 'custom':
+          if (customDateRange.start && customDateRange.end) {
+            const start = new Date(customDateRange.start);
+            start.setHours(0, 0, 0, 0);
+
+            const end = new Date(customDateRange.end);
+            end.setHours(23, 59, 59, 999);
+
+            return isWithinInterval(entryDate, { start, end });
+          }
+          return true;
+
+        default:
+          return true;
+      }
+    });
+  };
+
+  const filteredEntries = filterEntriesByDate(timeEntries);
+
+  const groupedByMonth = filteredEntries.reduce((acc, entry) => {
     const month = format(new Date(entry.startTime), 'MMMM yyyy');
     if (!acc[month]) {
       acc[month] = {};
     }
-    
+
     const date = format(new Date(entry.startTime), 'yyyy-MM-dd');
     if (!acc[month][date]) {
       acc[month][date] = [];
     }
-    
+
     acc[month][date].push(entry);
-    acc[month][date].sort((a, b) => 
+    acc[month][date].sort((a, b) =>
       new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
     );
-    
+
     return acc;
   }, {} as Record<string, Record<string, TimeEntry[]>>);
-
-  Object.keys(groupedByMonth).forEach(month => {
-    const sortedDates = Object.keys(groupedByMonth[month]).sort((a, b) => 
-      new Date(b).getTime() - new Date(a).getTime()
-    );
-    
-    const sortedEntries = sortedDates.reduce((acc, date) => {
-      acc[date] = groupedByMonth[month][date];
-      return acc;
-    }, {} as Record<string, TimeEntry[]>);
-    
-    groupedByMonth[month] = sortedEntries;
-  });
 
   const sortedMonths = Object.keys(groupedByMonth).sort((a, b) => {
     const dateA = new Date(a);
@@ -173,6 +226,30 @@ export default function TimesheetPage() {
           </div>
         </div>
         <div className="flex gap-4">
+          <select
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value as 'current' | 'previous' | 'custom')}
+          >
+            <option value="current">Current Month</option>
+            <option value="previous">Previous Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+
+          {filterType === 'custom' && (
+            <>
+              <Input
+                type="date"
+                value={customDateRange.start}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+              />
+              <Input
+                type="date"
+                value={customDateRange.end}
+                onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+              />
+            </>
+          )}
           <Button
             onClick={exportToCSV}
             variant="outline"
@@ -189,26 +266,12 @@ export default function TimesheetPage() {
         </div>
       </div>
 
-      {currentMonthEntries.length === 0 ? (
-        <Card className="text-center py-12">
-          <CardContent>
-            <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No timesheet entries for this month</h2>
-            <p className="text-muted-foreground mb-6">Start tracking your time by adding a new entry</p>
-            <Button onClick={() => setShowManualEntry(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Time Entry
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
       {showManualEntry && (
         <Card>
           <CardHeader>
             <CardTitle>Add Time Entry</CardTitle>
             <CardDescription>
-              Enter your time entry details
+              Enter your time entry details for {format(new Date(newEntry.date), 'MMMM d, yyyy')}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -244,13 +307,21 @@ export default function TimesheetPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Project Name</label>
-                <Input
-                  type="text"
-                  placeholder="Enter project name"
-                  required
+                <Select
                   value={newEntry.projectName}
-                  onChange={(e) => setNewEntry({ ...newEntry, projectName: e.target.value })}
-                />
+                  onValueChange={(value) => setNewEntry({ ...newEntry, projectName: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map((project) => (
+                      <SelectItem key={project} value={project}>
+                        {project}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
@@ -281,7 +352,7 @@ export default function TimesheetPage() {
 
           return (
             <Card key={month}>
-              <CardHeader 
+              <CardHeader
                 className="cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => toggleMonth(month)}
               >
@@ -312,7 +383,20 @@ export default function TimesheetPage() {
                               className="border rounded-lg p-4 flex items-center justify-between"
                             >
                               <div className="space-y-1">
-                                <h4 className="font-medium">{entry.projectName}</h4>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-medium">{entry.projectName}</h4>
+                                  {entry.verified ? (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      <BadgeCheck className="h-3 w-3 mr-1" />
+                                      Verified
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                      <Clock4 className="h-3 w-3 mr-1" />
+                                      Pending
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-sm text-muted-foreground">{entry.description}</p>
                               </div>
                               <div className="text-right">

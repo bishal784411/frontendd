@@ -2,20 +2,25 @@
 
 import { useState } from "react";
 import { useAuth } from '@/lib/auth-context';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-// import { Progress } from "@/components/ui/progress";
-import { Briefcase, Clock, Users, CheckCircle2, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Briefcase, Eye, Users } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { format } from "date-fns";
 
 interface Project {
   id: string;
@@ -30,51 +35,59 @@ interface Project {
   assignedEmployees: string[];
 }
 
+// Mock employees data
+const mockEmployees = [
+  { id: '1', name: 'John Admin', department: 'Web Development' },
+  { id: '2', name: 'Jane Employee', department: 'Data Analysis' },
+  { id: '3', name: 'Mike Johnson', department: 'Public Impact' },
+];
+
+const demoProjects: Project[] = [
+  {
+    id: '1',
+    name: 'E-commerce Platform Redesign',
+    department: 'Web Development',
+    clientName: 'TechRetail Solutions',
+    budget: 85000,
+    startDate: '2024-03-01',
+    endDate: '2024-08-31',
+    progress: 35,
+    status: 'active',
+    assignedEmployees: ['1', '2', '3'] // Employee IDs
+  },
+  {
+    id: '2',
+    name: 'Data Analytics Dashboard',
+    department: 'Data Analysis',
+    clientName: 'Analytics Corp',
+    budget: 65000,
+    startDate: '2024-04-01',
+    endDate: '2024-07-31',
+    progress: 20,
+    status: 'active',
+    assignedEmployees: ['2', '3'] // Employee IDs
+  }
+];
+
 export default function MyProjectsPage() {
   const { user } = useAuth();
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: '1',
-      name: 'Website Redesign',
-      department: 'Web Development',
-      clientName: 'Tech Corp',
-      budget: 50000,
-      startDate: '2024-03-01',
-      endDate: '2024-06-30',
-      progress: 35,
-      status: 'active',
-      assignedEmployees: ['2'] // Employee ID
-    },
-    {
-      id: '2',
-      name: 'Mobile App Development',
-      department: 'Web Development',
-      clientName: 'StartUp Inc',
-      budget: 75000,
-      startDate: '2024-02-15',
-      endDate: '2024-08-15',
-      progress: 20,
-      status: 'active',
-      assignedEmployees: ['2'] // Employee ID
-    }
-  ]);
+  const [projects] = useState<Project[]>(demoProjects);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Filter projects to only show those assigned to the current user
-  const userProjects = projects.filter(project => 
+  const userProjects = projects.filter(project =>
     project.assignedEmployees.includes(user?.id || '')
   );
 
-  const getStatusColor = (status: Project["status"]) => {
-    switch (status) {
-      case "active":
-        return "text-green-600 bg-green-100";
-      case "completed":
-        return "text-blue-600 bg-blue-100";
-      case "on-hold":
-        return "text-yellow-600 bg-yellow-100";
-      default:
-        return "text-gray-600 bg-gray-100";
-    }
+  const formatDate = (dateString: string) => {
+    return format(new Date(dateString), 'MMM d, yyyy');
+  };
+
+  // Get team member names for a project
+  const getTeamMembers = (employeeIds: string[]) => {
+    return mockEmployees
+      .filter(emp => employeeIds.includes(emp.id))
+      .map(emp => emp.name);
   };
 
   return (
@@ -87,70 +100,139 @@ export default function MyProjectsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {userProjects.map((project) => (
-          <Card key={project.id} className="flex flex-col">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle>{project.name}</CardTitle>
-                  <CardDescription>{project.department}</CardDescription>
-                </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                  {project.status}
-                </span>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
-              <div className="space-y-4 flex-1">
-                {/* <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Progress</span>
-                    <span className="font-medium">{project.progress}%</span>
-                  </div>
-                  <Progress value={project.progress} className="h-2" />
-                </div> */}
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Active Projects</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold">
+              {userProjects.filter(p => p.status === 'active').length}
+            </p>
+            <p className="text-sm text-muted-foreground">Currently in progress</p>
+          </CardContent>
+        </Card>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Client</p>
-                    <p className="font-medium">{project.clientName}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Budget</p>
-                    <p className="font-medium">${project.budget.toLocaleString()}</p>
-                  </div>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Budget</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold">
+              ${userProjects.reduce((sum, p) => sum + p.budget, 0).toLocaleString()}
+            </p>
+            <p className="text-sm text-muted-foreground">Across all projects</p>
+          </CardContent>
+        </Card>
 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Start Date</p>
-                    <p className="font-medium">{format(new Date(project.startDate), "MMM d, yyyy")}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">End Date</p>
-                    <p className="font-medium">{format(new Date(project.endDate), "MMM d, yyyy")}</p>
-                  </div>
-                </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-4xl font-bold">
+              {Math.round(userProjects.reduce((sum, p) => sum + p.progress, 0) / userProjects.length || 0)}%
+            </p>
+            <p className="text-sm text-muted-foreground">Average completion</p>
+          </CardContent>
+        </Card>
+      </div>
 
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{project.assignedEmployees.length} members</span>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {userProjects.length === 0 && (
-          <Card className="col-span-full">
-            <CardContent className="py-8 text-center text-muted-foreground">
-              No projects assigned to you yet.
-            </CardContent>
-          </Card>
-        )}
+      <div className="mt-8">
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Project Name</TableHead>
+                <TableHead>Client</TableHead>
+                <TableHead>Budget</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Start Date</TableHead>
+                <TableHead>End Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {userProjects.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground h-24">
+                    No projects assigned to you yet
+                  </TableCell>
+                </TableRow>
+              ) : (
+                userProjects.map((project) => (
+                  <TableRow key={project.id}>
+                    <TableCell className="font-medium">{project.name}</TableCell>
+                    <TableCell>{project.clientName}</TableCell>
+                    <TableCell>${project.budget.toLocaleString()}</TableCell>
+                    <TableCell>{project.department}</TableCell>
+                    <TableCell>{formatDate(project.startDate)}</TableCell>
+                    <TableCell>{formatDate(project.endDate)}</TableCell>
+                    <TableCell className="text-right">
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{project.name}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <p className="text-sm text-muted-foreground">Client</p>
+                                <p className="font-medium">{project.clientName}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Budget</p>
+                                <p className="font-medium">${project.budget.toLocaleString()}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Department</p>
+                                <p className="font-medium">{project.department}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Progress</p>
+                                <p className="font-medium">{project.progress}%</p>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Timeline</p>
+                              <p className="font-medium">
+                                {formatDate(project.startDate)} - {formatDate(project.endDate)}
+                              </p>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Users className="h-4 w-4 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">Team Members ({project.assignedEmployees.length})</p>
+                              </div>
+                              <div className="space-y-1">
+                                {getTeamMembers(project.assignedEmployees).map((name, index) => (
+                                  <p key={index} className="text-sm font-medium">{name}</p>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="mt-2">
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className="bg-primary h-2 rounded-full"
+                                  style={{ width: `${project.progress}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   );

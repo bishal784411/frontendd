@@ -9,6 +9,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  roleId?: number; 
   department?: string;
   position?: string;
   avatar?: string | null;
@@ -23,6 +24,9 @@ export interface User {
   panCardImage?: string | null;
   employmentType: 'full-time' | 'part-time';
   password?: string;
+  document?: string;           // New: document field
+  fullTimer?: boolean;         // New: fullTimer field
+  salary?: number;             // New: salary field
   bankDetails?: {
     accountNumber: string;
     bankName: string;

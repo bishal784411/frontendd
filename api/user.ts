@@ -35,9 +35,13 @@ export const createUserApi = async (data: CreateUserParams) => {
   }
 };
 
-export const getAllUsers = async () => {
-  const response = await axiosInstance.get('/user/admin/all', {
-    withCredentials: true, // 
-  });
-  return response.data;
+export const updateUserProfile = async (payload: any) => {
+  try {
+    const response = await axiosInstance.put("/user/me", payload);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to update user profile via /me endpoint", error);
+    throw error;
+  }
 };
+

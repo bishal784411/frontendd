@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { User, Role } from "@/lib/types";
 import { login_api } from "@/api/auth";
+import { updateUserProfile } from "@/api/user";
 import {
   getFromLocalStorage,
   removeFromLocalStorage,
@@ -43,21 +44,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth();
   }, []);
 
-  // const login = async (email: string, password: string) => {
-  //   const { user, accessToken } = await login_api(email, password);
-  //   console.log("Login successful:", user, accessToken);
-  //   // setToLocalStorage("user", user);
-  //   // setToLocalStorage("accessToken", accessToken);
-  //   setToLocalStorage("user", user); // object, keep stringifying
-  //   localStorage.setItem("accessToken", accessToken); // store string as is
-
-  //   setUser(user);
-  //   setAccessToken(accessToken);
-
-  //   const fetchedUser = await getMyInfo();
-  //   setUser(fetchedUser);
-  //   setToLocalStorage("user", fetchedUser);
-  // };
 
   const login = async (email: string, password: string) => {
     const { user, accessToken } = await login_api(email, password);
@@ -76,13 +62,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
-  const updateProfile = (data: Partial<User>) => {
-    if (user) {
-      const updatedUser = { ...user, ...data };
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      setUser(updatedUser);
+  // const updateProfile = (data: Partial<User>) => {
+  //   if (user) {
+  //     const updatedUser = { ...user, ...data };
+  //     localStorage.setItem("user", JSON.stringify(updatedUser));
+  //     setUser(updatedUser);
+  //   }
+  // };
+  const updateProfile = async (data: Partial<User>) => {
+  if (user) {
+    try {
+      // Send only the provided fields to the API
+      const updatedUser = await updateUserProfile(data);
+
+      // Locally merge with existing user to update the UI
+      const newUser = { ...user, ...data };
+      setToLocalStorage("user", newUser);
+      setUser(newUser);
+
+      console.log("Profile updated successfully:", updatedUser);
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      throw error;
     }
-  };
+  } else {
+    console.error("No user is logged in. Cannot update profile.");
+    throw new Error("User is not authenticated.");
+  }
+};
+
+
 
   return (
     <AuthContext.Provider

@@ -1,44 +1,65 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { Lock } from 'lucide-react';
 import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { toast } from "sonner";
-import { loginValidator } from "@/validator/login.validator";
-import { Lock } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { loginValidator } from "@/validator/login.validator"
 
 export default function LoginForm() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const { login } = useAuth();
-  const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [showForgotPassword, setShowForgotPassword] = useState(false);
+    const [resetEmail, setResetEmail] = useState('');
+    const { login } = useAuth();
+    const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = loginValidator.validate({ email, password });
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      const { error } = loginValidator.validate({ email, password });
 
-    if (error) {
-      // Convert Joi errors to a user-friendly message
-      const messages = error.details.map((d) => d.message).join(", ");
-      toast.error(messages); // or show messages individually
+      if (error) {
+        // Convert Joi errors to a user-friendly message
+        const messages = error.details.map((d) => d.message).join(", ");
+        toast.error(messages); // or show messages individually
+        return;
+      }
+
+      try {
+        const login_info = await login(email, password);
+        toast.success("Login successful");
+        router.push("/dashboard");
+      } catch (error) {
+        toast.error("Login failed");
+      }
+    };
+
+  const handleSendVerificationCode = () => {
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
       return;
     }
 
-    try {
-      const login_info = await login(email, password);
-      toast.success("Login successful");
-      router.push("/dashboard");
-    } catch (error) {
-      toast.error("Login failed");
+    // Mock sending verification code
+    const mockUsers = ['admin@example.com', 'employee@example.com'];
+    if (mockUsers.includes(resetEmail)) {
+      toast.success('If your email is found in our system, you will receive a verification code shortly');
+    } else {
+      toast.success('If your email is found in our system, you will receive a verification code shortly');
     }
+    setShowForgotPassword(false);
+    setResetEmail('');
   };
 
   return (
@@ -72,13 +93,46 @@ export default function LoginForm() {
               />
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex flex-col space-y-2">
             <Button className="w-full" type="submit">
               Sign in
+            </Button>
+            <Button
+              type="button"
+              variant="link"
+              className="text-sm"
+              onClick={() => setShowForgotPassword(true)}
+            >
+              Forgot your password?
             </Button>
           </CardFooter>
         </form>
       </Card>
+
+      <Dialog open={showForgotPassword} onOpenChange={setShowForgotPassword}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reset Password</DialogTitle>
+            <DialogDescription>
+              Enter your email address to receive a verification code
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+            />
+            <Button
+              className="w-full"
+              onClick={handleSendVerificationCode}
+            >
+              Send Verification Code
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

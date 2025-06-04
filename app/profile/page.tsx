@@ -5,6 +5,7 @@ import { createBankDetails, getBankDetails } from "@/api/bank";
 import { useEffect } from "react";
 import { useState, useRef } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { User, Upload, Camera, AlertCircle, Building2 } from "lucide-react";
+import { UserCog, Upload, Camera, AlertCircle, Building2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 
 
 interface BankDetailsPayload {
@@ -164,12 +166,50 @@ export default function ProfilePage() {
     e.preventDefault();
 
     // Validate based on which section is being edited/added
+    // if (editingSection === 'personal' || isAdding === 'personal') {
+    //   if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address) {
+    //     toast.error("Please fill in all required personal information");
+    //     return;
+    //   }
+    // }
+
     if (editingSection === 'personal' || isAdding === 'personal') {
       if (!profileData.name || !profileData.email || !profileData.phone || !profileData.address) {
         toast.error("Please fill in all required personal information");
         return;
       }
+
+      try {
+        const payload = {
+          name: profileData.name,
+          email: profileData.email,
+          phone: profileData.phone,
+          address: profileData.address,
+
+        };
+
+
+        await updateProfile(payload);
+
+        setEditingSection(null);
+        setIsAdding(null);
+        toast.success("Profile updated successfully");
+      } catch (error) {
+        toast.error("Failed to update profile");
+      }
     }
+
+
+    // if (editingSection === 'bank' || isAdding === 'bank') {
+    //   if (!profileData.bankDetails.accountNumber ||
+    //     !profileData.bankDetails.bankName ||
+    //     !profileData.bankDetails.accountHolderName ||
+    //     !profileData.bankDetails.panId ||
+    //     !profileData.bankDetails.bankAddress) {
+    //     toast.error("Please fill in all required bank details");
+    //     return;
+    //   }
+    // }
 
     if (editingSection === 'bank' || isAdding === 'bank') {
       const bank = profileData.bankDetails;
@@ -216,7 +256,12 @@ export default function ProfilePage() {
       }
     }
 
-  
+    
+
+    
+
+
+
 
     if (editingSection === 'documents' || isAdding === 'documents') {
       if (!profileData.panCardImage) {
@@ -301,7 +346,7 @@ export default function ProfilePage() {
   return (
     <div className="container mx-auto py-8">
       <div className="flex items-center gap-4 mb-8">
-        <User className="h-8 w-8 text-primary" />
+        <UserCog className="h-8 w-8 text-primary" />
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
           <p className="text-muted-foreground">Update your personal information</p>

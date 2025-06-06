@@ -40,11 +40,12 @@ export interface TimeEntry {
   id: string;
   userId: string;
   employeeName: string;
-  projectName: string;
   startTime: string;
   endTime: string;
   description: string;
+  projectName: string;
   duration: number;
+  verified?: boolean; // Now optional
 }
 
 export interface WeeklyReport {

@@ -11,8 +11,10 @@ import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+// import { Checkbox } from "@/components/ui/checkbox";
 import { TimeEntry } from '@/lib/types';
+// import { Checkbox } from '@radix-ui/react-checkbox';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Single sample entry
 const sampleTimeEntry: TimeEntry = {

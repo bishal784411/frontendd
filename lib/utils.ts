@@ -41,7 +41,7 @@ export const getFromLocalStorage = (key: string) => {
 // Optional: Remove item
 export const removeFromLocalStorage = (key: string) => {
   try {
-    localStorage.removeItem(key);
+    localStorage.removeItem('user');
   } catch (err) {
     console.error("Error removing from localStorage", err);
   }

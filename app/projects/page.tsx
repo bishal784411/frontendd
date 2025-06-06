@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { FolderKanban, Plus, Calendar, Users, Clock, Eye, Trash2, Archive, ChevronLeft, ChevronRight, Search, Check, X } from "lucide-react";
 import {
   Dialog,
@@ -48,6 +49,7 @@ import { cn } from "@/lib/utils";
 interface Project {
   id: string;
   name: string;
+  description: string;
   clientName: string;
   budget: number;
   department: string;
@@ -61,6 +63,7 @@ const demoProjects: Project[] = [
   {
     id: '1',
     name: 'E-commerce Platform Redesign',
+    description: 'Complete overhaul of the existing e-commerce platform with modern UI/UX principles, improved performance, and enhanced security features.',
     clientName: 'TechRetail Solutions',
     budget: 85000,
     department: 'Web Development',
@@ -72,6 +75,7 @@ const demoProjects: Project[] = [
   {
     id: '2',
     name: 'Data Analytics Dashboard',
+    description: 'Development of a comprehensive analytics dashboard with real-time data visualization, custom reporting, and predictive analytics capabilities.',
     clientName: 'Analytics Corp',
     budget: 65000,
     department: 'Data Analysis',
@@ -98,6 +102,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>(demoProjects);
   const [newProject, setNewProject] = useState({
     name: '',
+    description: '',
     clientName: '',
     budget: '',
     department: 'Web Development',
@@ -115,14 +120,14 @@ export default function ProjectsPage() {
   const [selectedDepartmentFilter, setSelectedDepartmentFilter] = useState<string | null>(null);
 
   const filteredEmployees = mockEmployees
-    .filter(emp =>
+    .filter(emp => 
       (!selectedDepartmentFilter || emp.department === selectedDepartmentFilter) &&
       (emp.name.toLowerCase().includes(employeeSearch.toLowerCase()) ||
-        emp.role.toLowerCase().includes(employeeSearch.toLowerCase()))
+       emp.role.toLowerCase().includes(employeeSearch.toLowerCase()))
     );
 
   const handleAddProject = () => {
-    if (!newProject.name || !newProject.clientName || !newProject.budget || !newProject.startDate || !newProject.endDate) {
+    if (!newProject.name || !newProject.description || !newProject.clientName || !newProject.budget || !newProject.startDate || !newProject.endDate) {
       toast.error('Please fill in all required fields');
       return;
     }
@@ -137,6 +142,7 @@ export default function ProjectsPage() {
     setProjects([...projects, project]);
     setNewProject({
       name: '',
+      description: '',
       clientName: '',
       budget: '',
       department: 'Web Development',
@@ -153,7 +159,7 @@ export default function ProjectsPage() {
   };
 
   const handleArchiveProject = (id: string) => {
-    setProjects(projects.map(p =>
+    setProjects(projects.map(p => 
       p.id === id ? { ...p, status: 'archived' } : p
     ));
     toast.success('Project archived successfully');
@@ -171,7 +177,7 @@ export default function ProjectsPage() {
     const matchesDepartment = departmentFilter === 'all' || project.department === departmentFilter;
     const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
     const matchesSearch = project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.clientName.toLowerCase().includes(searchTerm.toLowerCase());
+                         project.clientName.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesDepartment && matchesStatus && matchesSearch;
   });
 
@@ -259,7 +265,7 @@ export default function ProjectsPage() {
             </SelectContent>
           </Select>
         </div>
-        {user?.role === 'admin' && (
+        {user?.role?.name === 'Admin' && (
           <Dialog>
             <DialogTrigger asChild>
               <Button>
@@ -304,6 +310,15 @@ export default function ProjectsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Project Description</label>
+                  <Textarea
+                    placeholder="Enter project description"
+                    value={newProject.description}
+                    onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                    className="min-h-[100px]"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -469,14 +484,14 @@ export default function ProjectsPage() {
                 <TableHead>Department</TableHead>
                 <TableHead>Start Date</TableHead>
                 <TableHead>End Date</TableHead>
-                {user?.role === 'admin' && <TableHead>Status</TableHead>}
+                {user?.role?.name === 'Admin' && <TableHead>Status</TableHead>}
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {currentProjects.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={user?.role === 'admin' ? 8 : 7} className="text-center text-muted-foreground h-24">
+                  <TableCell colSpan={user?.role?.name === 'Admin' ? 8 : 7} className="text-center text-muted-foreground h-24">
                     No projects found
                   </TableCell>
                 </TableRow>
@@ -489,12 +504,13 @@ export default function ProjectsPage() {
                     <TableCell>{project.department}</TableCell>
                     <TableCell>{formatDate(project.startDate)}</TableCell>
                     <TableCell>{formatDate(project.endDate)}</TableCell>
-                    {user?.role === 'admin' && (
+                    {user?.role?.name === 'Admin' && (
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${project.status === 'active'
-                            ? 'bg-green-100 text-green-800'
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          project.status === 'active' 
+                            ? 'bg-green-100 text-green-800' 
                             : 'bg-gray-100 text-gray-800'
-                          }`}>
+                        }`}>
                           {project.status}
                         </span>
                       </TableCell>
@@ -512,6 +528,10 @@ export default function ProjectsPage() {
                               <DialogTitle>{project.name}</DialogTitle>
                             </DialogHeader>
                             <div className="space-y-4">
+                              <div>
+                                <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
+                                <p className="text-sm">{project.description}</p>
+                              </div>
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <p className="text-sm text-muted-foreground">Client</p>
@@ -548,7 +568,7 @@ export default function ProjectsPage() {
                             </div>
                           </DialogContent>
                         </Dialog>
-                        {user?.role === 'admin' && (
+                        {user?.role?.name === 'Admin' && (
                           <>
                             <Button
                               variant="ghost"

@@ -159,8 +159,8 @@ export default function Navigation({ children }: NavigationProps) {
       icon: Clock,
     },
     {
-      href: '/my-projects',
-      label: 'My Projects',
+      href: '/projects',
+      label: 'Projects',
       icon: FolderKanban,
     },
     {

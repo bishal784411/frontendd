@@ -82,22 +82,6 @@ const mockEmployees = [
         position: 'Frontend Developer',
         avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=256&h=256&fit=crop&crop=faces',
     },
-    {
-        id: '5',
-        name: 'David Brown',
-        email: 'david.brown@company.com',
-        department: 'Public Impact',
-        position: 'Project Manager',
-        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=256&h=256&fit=crop&crop=faces',
-    },
-    {
-        id: '6',
-        name: 'Lisa Garcia',
-        email: 'lisa.garcia@company.com',
-        department: 'Engineering',
-        position: 'Backend Developer',
-        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=256&h=256&fit=crop&crop=faces',
-    },
 ];
 
 export default function RBACPage() {

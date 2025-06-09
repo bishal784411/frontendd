@@ -60,6 +60,7 @@ const calendarEvents = [
   }
 ];
 
+
 export default function Dashboard() {
   const { user } = useAuth();
   const { getEntriesForUser, getAllEntries, addTimeEntry } = useTimeSheetStore();
@@ -76,6 +77,7 @@ export default function Dashboard() {
   const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
 
   const leaveBalance = user ? calculateLeaveBalance(user.id) : { annual: 0, personal: 0 };
+
 
   const handleManualEntry = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,11 +138,11 @@ export default function Dashboard() {
         break;
     }
 
-    // let entries = user?.role?.name === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
-    let entries = user?.role?.name === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
+    // let entries = user?.role?.name === 'Admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
+    let entries = user?.role?.name === 'Admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
 
 
-    if (user?.role?.name === 'admin' && selectedEmployee !== 'all') {
+    if (user?.role?.name === 'Admin' && selectedEmployee !== 'all') {
       entries = entries.filter(entry => entry.employeeName === selectedEmployee);
     }
 
@@ -195,7 +197,7 @@ export default function Dashboard() {
 
   // Calculate total hours worked
   const calculateTotalHours = () => {
-    const entries = user?.role?.name === 'admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
+    const entries = user?.role?.name === 'Admin' ? getAllEntries() : getEntriesForUser(user?.id || '');
     return entries.reduce((total, entry) => total + entry.duration, 0);
   };
 
@@ -226,7 +228,7 @@ export default function Dashboard() {
                 <p className="text-2xl font-bold">{calculateTotalHours().toFixed(1)}h</p>
                 <p className="text-sm text-muted-foreground">Total Hours Worked</p>
               </div>
-              {currentMonthEntries.length === 0 && user?.role?.name === 'employee' && (
+              {currentMonthEntries.length === 0 && user?.role?.name === 'Employee' && (
                 <div className="text-center py-4">
                   <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm text-muted-foreground mb-4">No time entries for this month</p>
@@ -240,7 +242,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {user?.role?.name === 'employee' && (
+        {user?.role?.name === 'Employee' && (
           <Card>
             <CardHeader>
               <CardTitle>Leave Balance</CardTitle>
@@ -330,7 +332,7 @@ export default function Dashboard() {
             Working Hours
           </CardTitle>
           <div className="flex items-center gap-4">
-            {user?.role?.name === 'admin' && (
+            {user?.role?.name === 'Admin' && (
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Select employee" />
@@ -368,7 +370,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="h-5 w-5" />
@@ -401,7 +403,7 @@ export default function Dashboard() {
             )}
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 }

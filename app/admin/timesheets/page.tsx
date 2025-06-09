@@ -6,15 +6,14 @@ import { useTimeSheetStore } from '@/lib/timesheet-store';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Clock, Eye, Users, Download, Search, ChevronRight, ChevronDown } from "lucide-react";
+import { Clock, Eye, Users, Download, Search, ChevronRight, ChevronDown, Filter } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-// import { Checkbox } from "@/components/ui/checkbox";
-import { TimeEntry } from '@/lib/types';
-// import { Checkbox } from '@radix-ui/react-checkbox';
 import { Checkbox } from '@/components/ui/checkbox';
+import { TimeEntry } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 // Single sample entry
 const sampleTimeEntry: TimeEntry = {
@@ -140,26 +139,29 @@ export default function AdminTimesheetsPage() {
     }));
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center gap-4 mb-8">
-        <Clock className="h-8 w-8 text-primary" />
+    <div className="container mx-auto py-4 md:py-8 px-4">
+      <div className="flex items-center gap-4 mb-6 md:mb-8">
+        <Clock className="h-6 w-6 md:h-8 md:w-8 text-primary" />
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Timesheet Management</h1>
-          <p className="text-muted-foreground">Review and manage employee timesheets</p>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Timesheet Management</h1>
+          <p className="text-sm md:text-base text-muted-foreground">Review and manage employee timesheets</p>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div className="flex items-center gap-4 flex-1">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search employees..."
-              className="pl-10"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+      {/* Mobile Filters */}
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search employees..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        {/* Desktop Filters */}
+        <div className="hidden md:flex items-center gap-4">
           <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select department" />
@@ -171,17 +173,6 @@ export default function AdminTimesheetsPage() {
               ))}
             </SelectContent>
           </Select>
-          {/* <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select employee" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Employees</SelectItem>
-              {filteredEmployees.map(emp => (
-                <SelectItem key={emp.id} value={emp.name}>{emp.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select> */}
           <Select value={selectedStatus} onValueChange={setSelectedStatus}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by status" />
@@ -193,9 +184,52 @@ export default function AdminTimesheetsPage() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Mobile Filters Popover */}
+        <div className="md:hidden">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-full">
+                <Filter className="h-4 w-4 mr-2" />
+                Filters
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Department</label>
+                  <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Departments</SelectItem>
+                      {departments.map(dept => (
+                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Status</label>
+                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="verified">Verified</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
-      <div className="space-y-6 mt-6">
+      <div className="space-y-4 md:space-y-6">
         {filteredEmployeeData.map(({ employeeName, entries }) => {
           const isCollapsed = collapsedEmployees.includes(employeeName);
           const selectedEntries = selectedEntriesByEmployee[employeeName] || [];
@@ -205,17 +239,17 @@ export default function AdminTimesheetsPage() {
           return (
             <Card key={employeeName}>
               <CardHeader
-                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                className="cursor-pointer hover:bg-muted/50 transition-colors p-4 md:p-6"
                 onClick={() => toggleEmployee(employeeName)}
               >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle>{employeeName}</CardTitle>
+                <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg md:text-xl">{employeeName}</CardTitle>
                     <p className="text-sm text-muted-foreground">
                       Total hours: {entries.reduce((sum, entry) => sum + entry.duration, 0).toFixed(1)}h
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -223,9 +257,11 @@ export default function AdminTimesheetsPage() {
                         e.stopPropagation();
                         exportToCSV(employeeName, entries);
                       }}
+                      className="text-xs"
                     >
-                      <Download className="h-4 w-4 mr-2" />
-                      Export CSV
+                      <Download className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                      <span className="hidden sm:inline">Export CSV</span>
+                      <span className="sm:hidden">Export</span>
                     </Button>
                     {selectedEntries.length > 0 && (
                       <>
@@ -236,8 +272,10 @@ export default function AdminTimesheetsPage() {
                             e.stopPropagation();
                             handleVerifyEntries(employeeName);
                           }}
+                          className="text-xs"
                         >
-                          Verify Selected ({selectedEntries.length})
+                          <span className="hidden sm:inline">Verify Selected ({selectedEntries.length})</span>
+                          <span className="sm:hidden">Verify ({selectedEntries.length})</span>
                         </Button>
                         <Button
                           variant="outline"
@@ -246,8 +284,10 @@ export default function AdminTimesheetsPage() {
                             e.stopPropagation();
                             handleMarkPending(employeeName);
                           }}
+                          className="text-xs"
                         >
-                          Mark as Pending
+                          <span className="hidden sm:inline">Mark as Pending</span>
+                          <span className="sm:hidden">Pending</span>
                         </Button>
                       </>
                     )}
@@ -260,8 +300,9 @@ export default function AdminTimesheetsPage() {
                 </div>
               </CardHeader>
               {!isCollapsed && (
-                <CardContent>
-                  <div className="rounded-md border">
+                <CardContent className="p-4 md:p-6">
+                  {/* Desktop Table View */}
+                  <div className="hidden lg:block rounded-md border">
                     <div className="grid grid-cols-8 gap-4 p-4 font-medium border-b">
                       <div>Date</div>
                       <div>Project</div>
@@ -327,6 +368,67 @@ export default function AdminTimesheetsPage() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Mobile Card View */}
+                  <div className="lg:hidden space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Select All</span>
+                      <Checkbox
+                        checked={allEntriesSelected}
+                        indeterminate={!allEntriesSelected && someEntriesSelected}
+                        onCheckedChange={(checked) => {
+                          handleSelectAllForEmployee(employeeName, entries, checked as boolean);
+                        }}
+                      />
+                    </div>
+                    {entries.map((entry) => (
+                      <Card key={entry.id} className="border-l-4 border-l-primary">
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <h4 className="font-medium">{entry.projectName}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {format(parseISO(entry.startTime), 'MMM d, yyyy')}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setSelectedEntry(entry)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Checkbox
+                                checked={selectedEntries.includes(entry.id)}
+                                onCheckedChange={(checked) => {
+                                  setSelectedEntriesByEmployee(prev => ({
+                                    ...prev,
+                                    [employeeName]: checked
+                                      ? [...(prev[employeeName] || []), entry.id]
+                                      : (prev[employeeName] || []).filter(id => id !== entry.id)
+                                  }));
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-sm mb-3">{entry.description}</p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">{entry.duration.toFixed(2)}h</span>
+                            {entry.verified ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                Pending
+                              </span>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </CardContent>
               )}
             </Card>
@@ -335,13 +437,13 @@ export default function AdminTimesheetsPage() {
       </div>
 
       <Dialog open={!!selectedEntry} onOpenChange={() => setSelectedEntry(null)}>
-        <DialogContent>
+        <DialogContent aria-describedby="dialog-description" className="border-0 w-full max-w-[95vw] max-h-[95vh] md:max-w-3xl md:max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Time Entry Details</DialogTitle>
           </DialogHeader>
           {selectedEntry && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Date</p>
                   <p className="font-medium">{format(new Date(selectedEntry.startTime), 'PPP')}</p>

@@ -9,7 +9,6 @@ import {
   Users,
   Clock,
   FileText,
-  Ticket,
   LogOut,
   LayoutDashboard,
   FolderKanban,
@@ -19,9 +18,9 @@ import {
   ChevronLeft,
   Menu,
   Calendar,
-  CalendarDays,
   Bell,
-  Briefcase,
+  KeyRound,
+  Shield,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,13 +40,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { format } from 'date-fns';
+import PasswordChange from '@/components/auth/password-change';
 
-
-
-// interface Role {
-//   id: number;
-//   name: string;
-// }
 
 
 
@@ -55,10 +49,6 @@ interface NavigationProps {
   children: React.ReactNode;
 }
 
-// export interface Role {
-//   id: number;
-//   name: string;
-// }
 
 
 export default function Navigation({ children }: NavigationProps) {
@@ -68,6 +58,7 @@ export default function Navigation({ children }: NavigationProps) {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -92,16 +83,6 @@ export default function Navigation({ children }: NavigationProps) {
   };
 
   const roleName = user?.role?.name?.toLowerCase() || "";
-  // const roleName = user?.role?.toLowerCase() || "";
-
-  // const roleName = (() => {
-  //   if (typeof user?.role === "string") {
-  //     return user.role.toLowerCase();
-  //   } else if (typeof user?.role === "object" && "name" in user.role) {
-  //     return String(user.role).toLowerCase();
-  //   }
-  //   return "";
-  // })();
 
 
   const adminLinks = [
@@ -145,6 +126,11 @@ export default function Navigation({ children }: NavigationProps) {
     //   label: 'Tickets',
     //   icon: Ticket,
     // },
+    {
+      href: '/rbac',
+      label: 'RBAC',
+      icon: Shield,
+    },
   ];
 
   const employeeLinks = [
@@ -185,7 +171,6 @@ export default function Navigation({ children }: NavigationProps) {
     // },
   ];
 
-  // const links = user?.role === 'admin' ? adminLinks : employeeLinks;
   const links = roleName === "admin" ? adminLinks : employeeLinks;
 
   const NavLinks = () => (
@@ -287,10 +272,9 @@ export default function Navigation({ children }: NavigationProps) {
               >
                 <p className="font-medium">
                   {notification.message || (
-                    `${notification.employeeName} submitted a ${
-                      notification.type === 'leave_request' 
-                        ? 'leave request' 
-                        : notification.type === 'ticket'
+                    `${notification.employeeName} submitted a ${notification.type === 'leave_request'
+                      ? 'leave request'
+                      : notification.type === 'ticket'
                         ? 'support ticket'
                         : 'weekly report'
                     }`
@@ -307,8 +291,8 @@ export default function Navigation({ children }: NavigationProps) {
             </p>
           )}
           {notifications.length > 5 && (
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               className="w-full"
               onClick={() => router.push('/notifications')}
             >
@@ -384,6 +368,10 @@ export default function Navigation({ children }: NavigationProps) {
                     <span>Profile Settings</span>
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowPasswordChange(true)}>
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  <span>Change Password</span>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
@@ -418,6 +406,14 @@ export default function Navigation({ children }: NavigationProps) {
           {children}
         </div>
       </main>
+
+      <PasswordChange
+        isOpen={showPasswordChange}
+        onClose={() => setShowPasswordChange(false)}
+        email={user?.email || ''}
+      />
     </div>
   );
 }
+
+

@@ -29,69 +29,83 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const storedUser = getFromLocalStorage("user");
-      const accessToken = getFromLocalStorage("accessToken");
-      if (storedUser) {
-        setUser(storedUser);
+      try {
+        const storedUser = getFromLocalStorage("user");
+        const accessToken = getFromLocalStorage("accessToken");
+
+        if (accessToken) {
+          // If there's an access token, verify it by fetching user info
+          const userInfo = await getMyInfo();
+          setUser(userInfo);
+          setToLocalStorage("user", userInfo);
+          setAccessToken(accessToken);
+        } else if (storedUser) {
+          // Fallback to stored user if no token (optional)
+          setUser(storedUser);
+        }
+      } catch (error) {
+        console.error("Authentication check failed:", error);
+        // Clear invalid credentials
+        removeFromLocalStorage("user");
+        removeFromLocalStorage("accessToken");
+        setUser(null);
+        setAccessToken(null);
+      } finally {
+        setIsLoading(false);
       }
-      if (accessToken) {
-        console.log("Access Token found:", accessToken);
-      } else {
-        console.log("No access token found");
-      }
-      setIsLoading(false);
     };
+
     checkAuth();
   }, []);
 
-
   const login = async (email: string, password: string) => {
-    const { user, accessToken } = await login_api(email, password);
-    console.log("Login successful:", user, accessToken);
-    setToLocalStorage("user", user);
-    localStorage.setItem("accessToken", accessToken);
-    setUser(user);
-    setAccessToken(accessToken);
+    setIsLoading(true);
+    try {
+      const { user, accessToken } = await login_api(email, password);
+      setToLocalStorage("user", user);
+      setToLocalStorage("accessToken", accessToken);
+      setUser(user);
+      setAccessToken(accessToken);
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-
 
   const logout = () => {
-    removeFromLocalStorage("user");
-    removeFromLocalStorage("accessToken");
-    setUser(null);
+    setIsLoading(true);
+    try {
+      removeFromLocalStorage("user");
+      removeFromLocalStorage("accessToken");
+      setUser(null);
+      setAccessToken(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // const updateProfile = (data: Partial<User>) => {
-  //   if (user) {
-  //     const updatedUser = { ...user, ...data };
-  //     localStorage.setItem("user", JSON.stringify(updatedUser));
-  //     setUser(updatedUser);
-  //   }
-  // };
   const updateProfile = async (data: Partial<User>) => {
-  if (user) {
-    try {
-      // Send only the provided fields to the API
-      const updatedUser = await updateUserProfile(data);
-
-      // Locally merge with existing user to update the UI
-      const newUser = { ...user, ...data };
-      setToLocalStorage("user", newUser);
-      setUser(newUser);
-
-      console.log("Profile updated successfully:", updatedUser);
-    } catch (error) {
-      console.error("Failed to update profile:", error);
-      throw error;
+    if (user) {
+      try {
+        const updatedUser = await updateUserProfile(data);
+        const newUser = { ...user, ...data };
+        setToLocalStorage("user", newUser);
+        setUser(newUser);
+        return updatedUser;
+      } catch (error) {
+        console.error("Failed to update profile:", error);
+        throw error;
+      }
     }
-  } else {
-    console.error("No user is logged in. Cannot update profile.");
     throw new Error("User is not authenticated.");
+  };
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
-};
-
-
 
   return (
     <AuthContext.Provider

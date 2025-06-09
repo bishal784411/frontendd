@@ -59,6 +59,7 @@ interface Project {
   assignedEmployees: string[];
 }
 
+
 const demoProjects: Project[] = [
   {
     id: '1',
@@ -209,30 +210,33 @@ export default function ProjectsPage() {
             <p className="text-sm text-muted-foreground">Currently in progress</p>
           </CardContent>
         </Card>
+        {user?.role?.name === 'Admin' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Archived Projects</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold">
+                {projects.filter(p => p.status === 'archived').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Completed projects</p>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Archived Projects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">
-              {projects.filter(p => p.status === 'archived').length}
-            </p>
-            <p className="text-sm text-muted-foreground">Completed projects</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold">
-              ${projects.reduce((sum, p) => sum + p.budget, 0).toLocaleString()}
-            </p>
-            <p className="text-sm text-muted-foreground">Across all projects</p>
-          </CardContent>
-        </Card>
+        {user?.role?.name === 'Admin' && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Budget</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-4xl font-bold">
+                ${projects.reduce((sum, p) => sum + p.budget, 0).toLocaleString()}
+              </p>
+              <p className="text-sm text-muted-foreground">Across all projects</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="mt-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -254,16 +258,18 @@ export default function ProjectsPage() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
+          {user?.role?.name === 'Admin' && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
         {user?.role?.name === 'Admin' && (
           <Dialog>
@@ -478,16 +484,16 @@ export default function ProjectsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Project Name</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Budget</TableHead>
-                <TableHead>Department</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>End Date</TableHead>
-                {user?.role?.name === 'Admin' && <TableHead>Status</TableHead>}
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
+                  <TableHead className="min-w-[150px]">Project Name</TableHead>
+                  <TableHead className="hidden md:table-cell">Client</TableHead>
+                  {user?.role?.name === 'Admin' && <TableHead className="hidden md:table-cell">Budget</TableHead>}
+                  <TableHead>Department</TableHead>
+                  <TableHead className="hidden md:table-cell">Start Date</TableHead>
+                  <TableHead className="hidden md:table-cell">End Date</TableHead>
+                  {user?.role?.name === 'Admin' && <TableHead className="hidden md:table-cell">Status</TableHead>}
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
             <TableBody>
               {currentProjects.length === 0 ? (
                 <TableRow>
@@ -499,13 +505,15 @@ export default function ProjectsPage() {
                 currentProjects.map((project) => (
                   <TableRow key={project.id}>
                     <TableCell className="font-medium">{project.name}</TableCell>
-                    <TableCell>{project.clientName}</TableCell>
-                    <TableCell>${project.budget.toLocaleString()}</TableCell>
-                    <TableCell>{project.department}</TableCell>
-                    <TableCell>{formatDate(project.startDate)}</TableCell>
-                    <TableCell>{formatDate(project.endDate)}</TableCell>
+                    <TableCell className="hidden md:table-cell">{project.clientName}</TableCell>
                     {user?.role?.name === 'Admin' && (
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">${project.budget.toLocaleString()}</TableCell>
+                    )}
+                    <TableCell>{project.department}</TableCell>
+                    <TableCell className="hidden md:table-cell">{formatDate(project.startDate)}</TableCell>
+                    <TableCell className="hidden md:table-cell">{formatDate(project.endDate)}</TableCell>
+                    {user?.role?.name === 'Admin' && (
+                      <TableCell className="hidden md:table-cell">
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           project.status === 'active' 
                             ? 'bg-green-100 text-green-800' 
@@ -523,10 +531,8 @@ export default function ProjectsPage() {
                               <Eye className="h-4 w-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>{project.name}</DialogTitle>
-                            </DialogHeader>
+                          <DialogContent className="w-[600px] h-[500px] max-w-[90vw] max-h-[90vh] overflow-y-auto">
+                            <DialogTitle>{project.name}</DialogTitle>
                             <div className="space-y-4">
                               <div>
                                 <h3 className="text-sm font-medium text-muted-foreground mb-2">Description</h3>
@@ -576,13 +582,6 @@ export default function ProjectsPage() {
                               onClick={() => handleArchiveProject(project.id)}
                             >
                               <Archive className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteProject(project.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </>
                         )}

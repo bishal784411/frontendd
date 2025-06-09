@@ -1,7 +1,7 @@
 'use client';
 
 
-import { createUserApi } from '@/api/user';
+// import { createUserApi } from '@/api/user';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useTicketStore } from '@/lib/ticket-store';
@@ -135,9 +135,9 @@ export default function EmployeesPage() {
     console.log('Payload:', payload);
   
     try {
-      await createUserApi(payload);
+      // await createUserApi(payload);
       toast.success('User created successfully');
-      setShowEmployeeForm(false);
+      setShowEmployeeForm(false); 
       setNewEmployee(emptyEmployeeForm);
     } catch (err) {
       toast.error((err as Error).message);
@@ -175,7 +175,7 @@ export default function EmployeesPage() {
       </div>
 
       <Dialog open={showEmployeeForm} onOpenChange={setShowEmployeeForm}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogTitle>{isEditing ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -369,7 +369,7 @@ export default function EmployeesPage() {
                                 <Eye className="h-4 w-4" />
                               </Button>
                             </DialogTrigger>
-                            <DialogContent>
+                            <DialogContent className="border-0  w-full max-w-[95vw] max-h-[95vh] md:max-w-4xl md:max-h-[90vh] overflow-y-auto">
                               <DialogTitle>Employee Details</DialogTitle>
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div className="space-y-6">
